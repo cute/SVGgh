@@ -71,7 +71,7 @@
     if(nil != (self = [super initWithString:utf8String]))
     {
 		_colorMap = [[NSMutableDictionary alloc] init];
-        
+
         CFArrayRef langs = CFLocaleCopyPreferredLanguages();
         CFStringRef langCode = CFArrayGetValueAtIndex (langs, 0);
         _isoLanguage = [[NSString stringWithString:(__bridge NSString*)langCode] substringToIndex:2];
@@ -84,11 +84,16 @@
 {
 	if(nil != (self = [super initWithContentsOfURL:url]))
     {
-		_colorMap = [[NSMutableDictionary alloc] init];
-        
+        _colorMap = [[NSMutableDictionary alloc] init];
+
         CFArrayRef langs = CFLocaleCopyPreferredLanguages();
-        CFStringRef langCode = CFArrayGetValueAtIndex (langs, 0);
-        _isoLanguage = [[NSString stringWithString:(__bridge NSString*)langCode] substringToIndex:2];
+        if (CFArrayGetCount(langs) > 0) {
+            CFStringRef langCode = CFArrayGetValueAtIndex (langs, 0);
+            _isoLanguage = [[NSString stringWithString:(__bridge NSString*)langCode] substringToIndex:2];
+        }else{
+            _isoLanguage = @"en";
+        }
+
         CFRelease(langs);
 	}
 	return self;
@@ -153,7 +158,7 @@
         if(result == nil)
         {
             result = UIColorFromSVGColorString (colorString);
-            
+
             if(result != nil)
             {
                 [self.colorMap setObject:result forKey:colorString];
@@ -167,7 +172,7 @@
 {
     CGRect documentRect = self.viewRect;
     CGSize documentSize = documentRect.size;
-    
+
     CGFloat interiorAspectRatio = maximumSize.width/maximumSize.height;
     CGFloat rendererAspectRatio = documentSize.width/documentSize.height;
     CGFloat fittedScaling;
@@ -179,18 +184,18 @@
     {
         fittedScaling = maximumSize.width/documentSize.width;
     }
-    
+
     CGFloat scaledWidth = floor(documentSize.width*fittedScaling);
     CGFloat scaleHeight = floor(documentSize.height*fittedScaling);
-    
+
     UIGraphicsBeginImageContextWithOptions(CGSizeMake(scaledWidth, scaleHeight), NO, scale);
     CGContextRef quartzContext = UIGraphicsGetCurrentContext();
     CGContextClearRect(quartzContext, CGRectMake(0, 0, scaledWidth, scaleHeight));
-    
+
     CGContextSaveGState(quartzContext);
     CGContextScaleCTM(quartzContext,fittedScaling,fittedScaling);
     CGContextTranslateCTM(quartzContext, -documentRect.origin.x*fittedScaling, -documentRect.origin.y*fittedScaling);
-    
+
     // tell the renderer to draw into my context
     [self renderIntoContext:quartzContext];
     CGContextRestoreGState(quartzContext);
@@ -203,7 +208,7 @@
 {
     return [self asImageWithSize:CGSizeMake(512, 512) andScale:1.0];
 }
-				  
+
 -(CGRect) viewRect
 {
 	CGRect	result = CGRectZero;
@@ -218,7 +223,7 @@
 	{
 		result  = SVGStringToRect(viewBoxString);
 	}
-	else 
+	else
 	{
 		if([viewWidth length] && [viewHeight length])
 		{
@@ -267,7 +272,7 @@
 {
 	NSDictionary* defaultAttributes = [SVGRenderer defaultAttributes];
 	[GHRenderableObject	setupContext:quartzContext withAttributes:defaultAttributes  withSVGContext:svgContext];
-	
+
 	[self.contents renderIntoContext:quartzContext  withSVGContext:self];
 }
 -(id<GHRenderable>) findRenderableObject:(CGPoint)testPoint withSVGContext:(id<SVGContext>)svgContext
